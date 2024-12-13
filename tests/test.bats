@@ -1,34 +1,36 @@
 setup() {
   set -eu -o pipefail
-  export DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )/.."
-  export TESTDIR=~/tmp/test-addon-template
-  mkdir -p $TESTDIR
-  export PROJNAME=test-addon-template
-  export DDEV_NONINTERACTIVE=true
-  ddev delete -Oy ${PROJNAME} >/dev/null 2>&1 || true
-  cd "${TESTDIR}"
-  ddev config --project-name=${PROJNAME}
-  ddev start -y >/dev/null
+
+  export ADDON_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")" >/dev/null 2>&1 && pwd)/.."
+  export PROJECT=ddev-addon-mindsdb
+  export TEST_DIR="$HOME/tmp/$PROJECT"
+  export DDEV_NON_INTERACTIVE=true
+
+  mkdir -p $TEST_DIR && cd "$TEST_DIR" || (printf "unable to cd to $TEST_DIR\n" && exit 1)
+
+  ddev delete -Oy $PROJECT >/dev/null 2>&1 || true
+  ddev config --project-name=$PROJECT --omit-containers=db --disable-upload-dirs-warning
 }
 
 health_checks() {
-  # Do something useful here that verifies the add-on
-  # ddev exec "curl -s elasticsearch:9200" | grep "${PROJNAME}-elasticsearch"
-  ddev exec "curl -s https://localhost:443/"
+  ddev exec "curl -s http://mindsdb:47334/" | grep -io 'mindsdb studio'
+  ddev exec "nc -zw5 mindsdb 47335"
+  ddev exec "nc -zw5 mindsdb 47336"
 }
 
 teardown() {
   set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  ddev delete -Oy ${PROJNAME} >/dev/null 2>&1
-  [ "${TESTDIR}" != "" ] && rm -rf ${TESTDIR}
+  cd "$TEST_DIR" || (printf "unable to cd to $TEST_DIR\n" && exit 1)
+  ddev stop
+  ddev delete -Oy "$PROJECT" >/dev/null 2>&1
+  [ "$TEST_DIR" != "" ] && rm -rf "$TEST_DIR"
 }
 
 @test "install from directory" {
   set -eu -o pipefail
-  cd ${TESTDIR}
-  echo "# ddev add-on get ${DIR} with project ${PROJNAME} in ${TESTDIR} ($(pwd))" >&3
-  ddev add-on get ${DIR}
+  cd ${TEST_DIR}
+  echo "# ddev add-on get ${TEST_DIR} with project ${PROJECT} in ${TEST_DIR} ($(pwd))" >&3
+  ddev add-on get ${ADDON_DIR}
   ddev restart
   health_checks
 }
@@ -36,9 +38,9 @@ teardown() {
 # bats test_tags=release
 @test "install from release" {
   set -eu -o pipefail
-  cd ${TESTDIR} || ( printf "unable to cd to ${TESTDIR}\n" && exit 1 )
-  echo "# ddev add-on get ddev/ddev-addon-template with project ${PROJNAME} in ${TESTDIR} ($(pwd))" >&3
-  ddev add-on get ddev/ddev-addon-template
+  cd ${TEST_DIR} || ( printf "unable to cd to ${TEST_DIR}\n" && exit 1 )
+  echo "# ddev add-on get meevagmbh/ddev-addon-mindsdb with project ${PROJECT} in ${TEST_DIR} ($(pwd))" >&3
+  ddev add-on get meevagmbh/ddev-addon-mindsdb
   ddev restart >/dev/null
   health_checks
 }

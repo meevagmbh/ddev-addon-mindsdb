@@ -1,0 +1,44 @@
+services:
+  mindsdb:
+    container_name: ddev-${DDEV_SITENAME}-mindsdb
+    hostname: ddev-${DDEV_SITENAME}-mindsdb
+    image: "mindsdb/mindsdb:${MINDSDB_DOCKER_TAG:-lightwood}"
+    restart: "no"
+
+    environment:
+      PYTHONWARNINGS: "ignore::DeprecationWarning,ignore::UserWarning:langchain:34,ignore::UserWarning:torchvision.io.image:13"
+      VIRTUAL_HOST: $DDEV_HOSTNAME
+      HTTP_EXPOSE: "47334"
+
+    entrypoint: 'python'
+    command: '-Im mindsdb --config=/root/mindsdb_config.json --api=http,mysql,mongodb'
+
+    expose:
+      - "47334" # HTTP API
+      - "47335" # MySQL
+      - "47336" # MongoDB
+
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: $DDEV_APPROOT
+      com.ddev.platform: ddev
+
+    volumes:
+      - type: "volume"
+        source: mindsdb
+        target: "/root/mdb_storage"
+        volume:
+          nocopy: true
+      - ".:/mnt/ddev_config"
+      - "ddev-global-cache:/mnt/ddev-global-cache"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:47334/api/util/ping"]
+      start_period: 40s
+      start_interval: 5s
+      interval: 60s
+      timeout: 4s
+      retries: 3
+
+volumes:
+  mindsdb:
