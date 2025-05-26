@@ -13,9 +13,20 @@ setup() {
 }
 
 health_checks() {
-  ddev exec "curl -s http://mindsdb:47334/" | grep -io 'mindsdb studio'
-  ddev exec "nc -zw5 mindsdb 47335"
-  ddev exec "nc -zw5 mindsdb 47336"
+  local retries=30
+  local wait=2
+
+  for i in $(seq 1 $retries); do
+    if ddev exec "curl -s http://mindsdb:47334/" | grep -io 'mindsdb studio' \
+      && ddev exec "nc -zw5 mindsdb 47335" \
+      && ddev exec "nc -zw5 mindsdb 47336"; then
+      return 0
+    fi
+    sleep $wait
+  done
+
+  echo "MindsDB health checks failed after $((retries * wait)) seconds" >&2
+  return 1
 }
 
 teardown() {
