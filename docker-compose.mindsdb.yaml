@@ -8,7 +8,7 @@ services:
 
     environment:
       PYTHONWARNINGS: "ignore::DeprecationWarning,ignore::UserWarning:langchain:34,ignore::UserWarning:torchvision.io.image:13"
-      VIRTUAL_HOST: $DDEV_HOSTNAME
+      VIRTUAL_HOST: ${DDEV_HOSTNAME}
       HTTP_EXPOSE: "47334"
 
     entrypoint: 'python'
@@ -21,7 +21,7 @@ services:
 
     labels:
       com.ddev.site-name: ${DDEV_SITENAME}
-      com.ddev.approot: $DDEV_APPROOT
+      com.ddev.approot: ${DDEV_APPROOT}
       com.ddev.platform: ddev
 
     volumes:
