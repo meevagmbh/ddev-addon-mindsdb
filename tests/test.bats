@@ -26,7 +26,31 @@ health_checks() {
   done
 
   echo "MindsDB health checks failed after $((retries * wait)) seconds" >&2
+  echo "Running debug diagnostics..." >&2
+  show_debug_info
   return 1
+}
+
+show_debug_info() {
+  echo "=== MindsDB Debug Information ===" >&2
+
+  # Container status
+  echo "Container status:" >&2
+  ddev logs -s mindsdb | tail -20 >&2
+
+  # Docker container logs
+  echo "Docker container logs:" >&2
+  docker logs "ddev-${PROJECT}-mindsdb" 2>&1 | tail -30 >&2
+
+  # Container health check
+  echo "Health check details:" >&2
+  docker inspect --format "{{ json .State.Health }}" "ddev-${PROJECT}-mindsdb" | jq -r '.' 2>/dev/null >&2 || echo "No health data" >&2
+
+  # Run debug script if available
+  if [ -f "${ADDON_DIR}/debug-mindsdb.sh" ]; then
+    echo "Running full debug script:" >&2
+    "${ADDON_DIR}/debug-mindsdb.sh" "${PROJECT}" >&2
+  fi
 }
 
 teardown() {
