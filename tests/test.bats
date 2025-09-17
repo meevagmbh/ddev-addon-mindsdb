@@ -18,8 +18,7 @@ health_checks() {
 
   for i in $(seq 1 $retries); do
     if ddev exec "curl -s http://mindsdb:47334/" | grep -io 'mindsdb studio' \
-      && ddev exec "nc -zw5 mindsdb 47335" \
-      && ddev exec "nc -zw5 mindsdb 47336"; then
+      && ddev exec "nc -zw5 mindsdb 47335"; then
       return 0
     fi
     sleep $wait
