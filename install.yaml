@@ -17,6 +17,8 @@ pre_install_actions:
 # by this add-on, or removal could remove things that are not owned by it
 project_files:
   - docker-compose.mindsdb.yaml
+  - debug-mindsdb.sh
+  - mindsdb_config.json
 
 # List of files and directories that are copied into the global .ddev directory
 # DDEV environment variables can be interpolated into these filenames
