@@ -34,17 +34,26 @@ health_checks() {
 show_debug_info() {
   echo "=== MindsDB Debug Information ===" >&2
 
-  # Container status
-  echo "Container status:" >&2
-  ddev logs -s mindsdb | tail -20 >&2
+  # Run the exact commands from DDEV error message for CI debugging
+  echo "Running DDEV-suggested debug commands:" >&2
+  echo "----------------------------------------" >&2
 
-  # Docker container logs
-  echo "Docker container logs:" >&2
-  docker logs "ddev-${PROJECT}-mindsdb" 2>&1 | tail -30 >&2
+  echo "1. ddev logs -s mindsdb:" >&2
+  ddev logs -s mindsdb >&2 || echo "Failed to get ddev logs" >&2
+  echo "" >&2
 
-  # Container health check
-  echo "Health check details:" >&2
-  docker inspect --format "{{ json .State.Health }}" "ddev-${PROJECT}-mindsdb" | jq -r '.' 2>/dev/null >&2 || echo "No health data" >&2
+  echo "2. docker logs ddev-${PROJECT}-mindsdb:" >&2
+  docker logs "ddev-${PROJECT}-mindsdb" 2>&1 >&2 || echo "Failed to get docker logs" >&2
+  echo "" >&2
+
+  echo "3. docker inspect health check:" >&2
+  docker inspect --format "{{ json .State.Health }}" "ddev-${PROJECT}-mindsdb" | docker run -i --rm ddev/ddev-utilities jq -r >&2 || echo "Failed to inspect health check" >&2
+  echo "" >&2
+
+  # Additional debugging info
+  echo "Additional container info:" >&2
+  echo "-------------------------" >&2
+  docker ps -a --filter "name=ddev-${PROJECT}-mindsdb" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" >&2 || echo "Failed to get container status" >&2
 
   # Run debug script if available
   if [ -f "${ADDON_DIR}/debug-mindsdb.sh" ]; then

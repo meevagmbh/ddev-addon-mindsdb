@@ -12,9 +12,10 @@ services:
       HTTP_EXPOSE: "47334"
       MINDSDB_DEBUG: "1"
       PYTHONUNBUFFERED: "1"
+      MINDSDB_APIS: "http,mysql,mongodb"
 
     entrypoint: 'python'
-    command: '-Im mindsdb --config=/root/mindsdb_config.json --api=http,mysql,mongodb'
+    command: '-Im mindsdb --config=/root/mindsdb_config.json'
 
     expose:
       - "47334" # HTTP API
@@ -33,6 +34,7 @@ services:
         volume:
           nocopy: true
       - ".:/mnt/ddev_config"
+      - "./mindsdb_config.json:/root/mindsdb_config.json"
       - "ddev-global-cache:/mnt/ddev-global-cache"
 
     healthcheck:
