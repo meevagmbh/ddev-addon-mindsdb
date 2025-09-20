@@ -27,8 +27,8 @@ Always reference these instructions first and fallback to search or bash command
   ```bash
   bats tests/test.bats
   ```
-- **NEVER CANCEL**: MindsDB container startup takes 15-20 minutes. NEVER CANCEL. Set timeout to 30+ minutes.
-- **TIMING EXPECTATION**: Complete test suite takes 20-25 minutes total due to container startup time.
+- **NEVER CANCEL**: MindsDB container startup takes 2-5 minutes. NEVER CANCEL. Set timeout to 15+ minutes.
+- **TIMING EXPECTATION**: Complete test suite takes 10-15 minutes total due to container startup time.
 
 ### Manual Testing and Validation
 - Create a test DDEV project and install the add-on:
@@ -38,7 +38,7 @@ Always reference these instructions first and fallback to search or bash command
   ddev add-on get /home/runner/work/ddev-addon-mindsdb/ddev-addon-mindsdb
   ddev restart
   ```
-- **NEVER CANCEL**: `ddev restart` takes 15-20 minutes on first run. NEVER CANCEL. Set timeout to 30+ minutes.
+- **NEVER CANCEL**: `ddev restart` takes 2-5 minutes on first run. NEVER CANCEL. Set timeout to 15+ minutes.
 - **CLEANUP**: Always clean up test projects: `ddev delete -Oy && rm -rf /tmp/test-mindsdb`
 
 ## Validation Scenarios
@@ -50,20 +50,20 @@ Always reference these instructions first and fallback to search or bash command
    docker ps | grep mindsdb  # Should show running container
    ```
 
-2. **Web Interface Validation**:
+2. **MindsDB API Validation**:
    ```bash
-   # Test MindsDB Studio web interface accessibility
-   ddev exec "curl -s http://mindsdb:47334/" | grep -i "mindsdb studio"
+   # Test MindsDB API endpoint (used by health checks)
+   docker exec ddev-[project]-mindsdb curl -s http://localhost:47334/api/util/ping
    ```
-   - **Expected**: Should return HTML containing "MindsDB Studio"
-   - **Manual**: Access `http://test-mindsdb.ddev.site:47334/` in browser
+   - **Expected**: Should return `{"status": "ok"}`
+   - **Manual**: Access `http://test-mindsdb.ddev.site:47334/` in browser for web interface
 
-3. **MySQL API Validation**:
+3. **MySQL API Port Validation**:
    ```bash
-   # Test MySQL API port availability  
-   ddev exec "nc -zw5 mindsdb 47335"
+   # Test MySQL API port availability using Python (nc not available in container)
+   docker exec ddev-[project]-mindsdb python -c "import socket; s=socket.socket(); s.connect(('localhost', 47335)); s.close(); print('MySQL port accessible')"
    ```
-   - **Expected**: Should exit with code 0 (port accessible)
+   - **Expected**: Should print "MySQL port accessible"
 
 4. **Container Process Validation**:
    ```bash
@@ -82,7 +82,7 @@ Always reference these instructions first and fallback to search or bash command
   docker logs ddev-[project]-mindsdb
   ```
 - **COMMON ISSUE**: Container startup failure - Usually resolved by waiting longer or restarting
-- **SOLUTION**: Run `ddev restart` and wait full 20 minutes
+- **SOLUTION**: Run `ddev restart` and wait full 5 minutes
 - **TEST VALIDATION**: Use `bats --count tests/test.bats` to verify test structure (should show "2")
 
 ## Key Architecture Components
@@ -92,7 +92,7 @@ Always reference these instructions first and fallback to search or bash command
 - **HTTP API Port**: 47334 (MindsDB Studio web interface)
 - **MySQL Port**: 47335 (SQL API endpoint)
 - **Health Check**: Python-based API ping with 90s start period
-- **Startup Time**: 15-20 minutes for full initialization
+- **Startup Time**: 2-5 minutes for full initialization
 
 ### Configuration Files
 - `mindsdb_config.json`: MindsDB service configuration
@@ -102,9 +102,9 @@ Always reference these instructions first and fallback to search or bash command
 ### Development Workflow
 1. **ALWAYS** run tests before committing changes:
    ```bash
-   bats tests/test.bats  # Takes 20-25 minutes total
+   bats tests/test.bats  # Takes 10-15 minutes total
    ```
-2. **TIMING**: Set timeouts of 30+ minutes for any test command
+2. **TIMING**: Set timeouts of 15+ minutes for any test command
 3. **VALIDATION**: Always verify both web interface and MySQL API after changes
 4. **DEBUGGING**: Use debug script for any container startup issues
 
@@ -128,7 +128,7 @@ Always reference these instructions first and fallback to search or bash command
 ### Frequently Used Commands
 ```bash
 # Test add-on functionality
-bats tests/test.bats  # NEVER CANCEL: 20-25 minutes total
+bats tests/test.bats  # NEVER CANCEL: 10-15 minutes total
 
 # Debug container issues  
 ./debug-mindsdb.sh [project-name]
@@ -142,7 +142,7 @@ docker logs ddev-[project]-mindsdb
 
 # Manual add-on installation test
 ddev add-on get meevagmbh/ddev-addon-mindsdb
-ddev restart  # NEVER CANCEL: 15-20 minutes
+ddev restart  # NEVER CANCEL: 2-5 minutes
 ```
 
 ### Environment Variables
@@ -150,8 +150,8 @@ ddev restart  # NEVER CANCEL: 15-20 minutes
 - `DDEV_NON_INTERACTIVE=true`: Required for automated testing
 
 ## Critical Timing Information
-- **Container Startup**: 15-20 minutes for full MindsDB initialization
+- **Container Startup**: 2-5 minutes for MindsDB initialization (validated)
 - **Health Check Start Period**: 90 seconds before health checks begin
-- **Test Suite Total Time**: 20-25 minutes (includes 2 container startups)
+- **Test Suite Total Time**: 10-15 minutes (includes 2 container startups)
 - **NEVER CANCEL WARNING**: Always wait for full startup completion
-- **Recommended Timeouts**: 30+ minutes for any container operation
+- **Recommended Timeouts**: 15+ minutes for any container operation
